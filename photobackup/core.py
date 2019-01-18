@@ -1,12 +1,6 @@
-# -*- coding: utf-8 -*-
-from . import helpers
-
-def get_hmm():
-    """Get a thought."""
-    return 'hmmm...'
+from gui import window
 
 
-def hmm():
-    """Contemplation..."""
-    if helpers.get_answer():
-        print(get_hmm())
+if __name__ == '__main__':
+    win = window.Top()
+    win.create_window()
