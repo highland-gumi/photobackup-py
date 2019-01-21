@@ -1,12 +1,10 @@
-Sample Module Repository
-========================
+Adobe Lightroom向け写真バックアップツール
+==========================================
 
-This simple project is an example repo for Python projects.
+最近の写真はSSDや本体HDDに保存、
+昔の写真はNASや外付けHDDなどに移動！
 
-`Learn more <http://www.kennethreitz.org/essays/repository-structure-and-python>`_.
+Lightroomから見ると、すべて本体側にあるように扱うことができます。
+古い写真も、Lightroomの設定を変えることなく閲覧・編集が可能になるようにシンボリックリンクを使用しています。
 
 ---------------
-
-If you want to learn more about ``setup.py`` files, check out `this repository <https://github.com/kennethreitz/setup.py>`_.
-
-✨🍰✨
