@@ -1,6 +1,7 @@
 import os, datetime, re, shutil
 from gui import window as win
-from photo_util import common_utils as utils, config as conf
+from photo_util import common_utils as utils
+from photo_util.config import Config as Conf
 
 # 定数
 DATE_FORMAT = '%Y/%m/%d'
@@ -16,6 +17,7 @@ class Archive:
             self.to_date = datetime.datetime.strptime(to_date, DATE_FORMAT)
         else:
             self.to_date = from_date
+        conf = Conf()
         self.main_dir = conf.load(conf.SEC_DIR, conf.MAIN_DIR)
         self.bk_dir = conf.load(conf.SEC_DIR, conf.BK_DIR)
 
@@ -94,6 +96,7 @@ class BackArchive:
             self.to_date = datetime.datetime.strptime(to_date, DATE_FORMAT)
         else:
             self.to_date = from_date
+        conf = Conf()
         self.main_dir = conf.load(conf.SEC_DIR, conf.MAIN_DIR)
         self.bk_dir = conf.load(conf.SEC_DIR, conf.BK_DIR)
 

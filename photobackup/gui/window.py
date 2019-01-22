@@ -1,15 +1,16 @@
 import tkinter as tk
 from tkinter import ttk as ttk
 from datetime import datetime
-import threading
+import threading, os
 from dateutil.relativedelta import relativedelta
 import tkinter.filedialog as filedialog
-from photo_util import config as conf
+from photo_util.config import Config as Conf
 from action import archive as archive
 
 
 class Top:
     def __init__(self):
+        conf = Conf()
         self.main_dir.set(conf.load(conf.SEC_DIR, conf.MAIN_DIR))
         self.bk_dir.set(conf.load(conf.SEC_DIR, conf.BK_DIR))
         arch_month = int(conf.load(conf.SEC_SET, conf.ARCH_MONTH))
@@ -30,15 +31,18 @@ class Top:
     @classmethod
     def main_dir_ref(cls):
         refs = filedialog.askdirectory(initialdir=cls.main_dir.get())
-        cls.main_dir.set(refs)
+        if refs:
+            cls.main_dir.set(refs.replace('/', os.sep))
 
     @classmethod
     def bk_dir_ref(cls):
         refs = filedialog.askdirectory(initialdir=cls.bk_dir.get())
-        cls.bk_dir.set(refs)
+        if refs:
+            cls.bk_dir.set(refs.replace('/', os.sep))
 
     @classmethod
     def exec_save(cls):
+        conf = Conf()
         dic = {conf.MAIN_DIR:cls.main_dir.get(),
                conf.BK_DIR:cls.bk_dir.get()}
         conf.save(conf.SEC_DIR, dic)
