@@ -1,4 +1,5 @@
 import os, datetime, re, shutil
+from distutils import dir_util
 from gui import window as win
 from photo_util import common_utils as utils
 from photo_util.config import Config as Conf
@@ -18,7 +19,7 @@ class Archive:
         if to_date and isinstance(to_date, str):
             self.to_date = datetime.datetime.strptime(to_date, DATE_FORMAT)
         else:
-            self.to_date = from_date
+            self.to_date = to_date
         conf = Conf()
         self.main_dir = conf.load(conf.SEC_DIR, conf.MAIN_DIR)
         self.bk_dir = conf.load(conf.SEC_DIR, conf.BK_DIR)
@@ -87,6 +88,53 @@ class Archive:
         shutil.rmtree(tmp_dir)
         win.Top.log_info(target_dir + 'を削除しました')
 
+    def func_copy_to_backup(self):
+        try:
+            if not os.path.exists(self.main_dir):
+                raise ValueError('メインディレクトリの設定が正しくありません：' + self.main_dir)
+            if not os.path.exists(self.bk_dir):
+                raise ValueError('バックアップディレクトリの設定が正しくありません：' + self.bk_dir)
+            win.Top.log_info('【メイン→バックアップ コピー処理開始】')
+
+            # 主処理
+            for year in os.listdir(self.main_dir):
+                year_dir = os.path.join(self.main_dir, year)
+                if not os.path.exists(year_dir) or os.path.islink(year_dir) or not year.isdigit() or len(year) != 4:
+                    continue
+                for month in os.listdir(year_dir):
+                    month_dir = os.path.join(self.main_dir, year, month)
+                    if 2 < len(month) and re.search(r'^[0-9]{1,2}[^0-9]*[0-9]{1,2}.*$', month):
+                        # 月と日が同一ディレクトリの処理
+                        if os.path.islink(month_dir):
+                            continue
+                        target_date = utils.DateUtil.parse(year=year, date=month)
+                        self.exec_copy(target_date, month_dir)
+                    elif month.isdigit():
+                        # 月の中に日のサブディレクトリの処理
+                        for day in os.listdir(month_dir):
+                            day_dir = os.path.join(self.main_dir, year, month, day)
+                            if not day.isdigit() or os.path.islink(day_dir):
+                                continue
+                            target_date = utils.DateUtil.parse(year=year, month=month, day=day)
+                            self.exec_copy(target_date, day_dir)
+
+            win.Top.log_info('【メイン→バックアップ コピー処理終了】')
+        except Exception as e:
+            win.Top.log_warn(e)
+            raise e
+
+    def exec_copy(self, target_date, src_dir):
+        # 処理日付チェック
+        if (self.from_date and target_date < self.from_date) \
+                or (self.to_date and self.to_date < target_date):
+            return
+
+        bk_dir = src_dir.replace(self.main_dir, self.bk_dir)
+        result = utils.FileUtil.copy_not_exist(src_dir, bk_dir)
+        if result:
+            win.Top.log_info('ファイルコピー：' + src_dir + ' -> ' + bk_dir)
+
+
 
 class BackArchive:
     def __init__(self, *,from_date=None, to_date=None):
@@ -108,7 +156,7 @@ class BackArchive:
                 raise ValueError('メインディレクトリの設定が正しくありません：' + self.main_dir)
             if not os.path.exists(self.bk_dir):
                 raise ValueError('バックアップディレクトリの設定が正しくありません：' + self.bk_dir)
-            win.Top.log_info('【バックアップ→メインコピー開始】')
+            win.Top.log_info('【バックアップ→メイン 復元コピー開始】')
 
             # 主処理
             for year in os.listdir(self.main_dir):
@@ -132,7 +180,7 @@ class BackArchive:
                             target_date = utils.DateUtil.parse(year=year, month=month, day=day)
                             self.exec_copy(target_date, day_dir)
 
-            win.Top.log_info('【バックアップ→メインコピー処理終了】')
+            win.Top.log_info('【バックアップ→メイン 復元コピー処理終了】')
         except Exception as e:
             win.Top.log_warn(e)
             raise e

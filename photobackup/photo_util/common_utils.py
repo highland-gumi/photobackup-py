@@ -1,4 +1,4 @@
-import re, datetime, os, filecmp
+import re, datetime, os, filecmp, shutil
 from typing import List
 
 
@@ -19,7 +19,7 @@ class DateUtil:
 class FileUtil:
     @staticmethod
     def contains_dir(target_dir, bk_dir) -> List:
-        file_list = [f for f in os.listdir(target_dir) if not f.startswith('.')]
+        file_list = [f for f in os.listdir(target_dir) if not FileUtil.is_hidden(f)]
         for f in file_list:
             if os.path.isdir(f):
                 # ディレクトリの場合は、サブディレクトリを処理する
@@ -34,10 +34,21 @@ class FileUtil:
             if dir_name.isdigit() and os.path.isdir(os.path.join(target_dir, dir_name)):
                 yield dir_name
 
+    @staticmethod
+    def copy_not_exist(src, dest):
+        if os.path.isdir(src) and not os.path.exists(dest):
+            shutil.copytree(src, dest)
+            return True
+        ret = False
+        for filename in os.listdir(src):
+            src_path = os.path.join(src, filename)
+            dest_path = os.path.join(dest, filename)
+            if not os.path.exists(dest_path) and not FileUtil.is_hidden(filename):
+                shutil.copy2(src_path, dest)
+                ret = True
+        return ret
 
-
-
-
-
-
+    @staticmethod
+    def is_hidden(filename):
+        return filename.startswith('.')
 

@@ -8,6 +8,12 @@ from photo_util.config import Config as Conf
 from photo_util.common_utils import FileUtil as FUtil
 from action import archive
 
+# 定数
+MAIN_TO_BK_COPY = 'メイン→バックアップ コピー'
+MAIN_TO_BK_ARCH = 'メイン→バックアップ リンク作成'
+BK_TO_MAIN_BACK = 'バックアップ→メイン 復元コピー'
+
+
 class Top:
     def __init__(self):
         conf = Conf()
@@ -15,8 +21,9 @@ class Top:
         self.bk_dir.set(conf.load(conf.SEC_DIR, conf.BK_DIR))
         self.ext_dir.set(conf.load(conf.SEC_DIR, conf.EXT_DIR))
         arch_month = int(conf.load(conf.SEC_SET, conf.ARCH_MONTH))
-        default_day = datetime.today() - relativedelta(months=arch_month)
-        self.archive_to.set(default_day.strftime(archive.DATE_FORMAT))
+        if arch_month:
+            default_day = datetime.today() - relativedelta(months=arch_month)
+            self.archive_to.set(default_day.strftime(archive.DATE_FORMAT))
         self.ext_type = archive.TYPE_COPY
 
     _instance = None
@@ -27,11 +34,10 @@ class Top:
     ext_dir = tk.StringVar()
     archive_from = tk.StringVar()
     archive_to = tk.StringVar()
-    archive_back_from = tk.StringVar()
-    archive_back_to = tk.StringVar()
     ext_year = tk.StringVar()
     ext_type = tk.IntVar()
     logs = tk.Text()
+    arch_combo = ttk.Combobox()
 
     @classmethod
     def main_dir_ref(cls):
@@ -65,22 +71,17 @@ class Top:
         # 実行
         from_date = cls.archive_from.get()
         to_date = cls.archive_to.get()
+        cmd = cls.arch_combo.get()
         if not from_date and not to_date:
             cls.log_info('対象日が指定されていません')
             return
         cls.exec_save()
-        archive.Archive(from_date=from_date, to_date=to_date).func_exec_by_date()
-
-    @classmethod
-    def exec_back_arch(cls):
-        # 実行
-        from_date = cls.archive_back_from.get()
-        to_date = cls.archive_back_to.get()
-        if not from_date and not to_date:
-            cls.log_info('対象日が指定されていません')
-            return
-        cls.exec_save()
-        archive.BackArchive(from_date=from_date, to_date=to_date).func_exec_by_date()
+        if cmd == MAIN_TO_BK_ARCH:
+            archive.Archive(from_date=from_date, to_date=to_date).func_exec_by_date()
+        elif cmd == MAIN_TO_BK_COPY:
+            archive.Archive(from_date=from_date, to_date=to_date).func_copy_to_backup()
+        elif cmd == BK_TO_MAIN_BACK:
+            archive.BackArchive(from_date=from_date, to_date=to_date).func_exec_by_date()
 
     @classmethod
     def exec_ext_move(cls):
@@ -156,62 +157,50 @@ class Top:
         save_btn = ttk.Button(frame1, text='設定保存', command=cls.exec_save)
         save_btn.grid(row=3, column=2)
 
-        # アーカイブ実行
-        label2_1 = ttk.Label(frame2, text='メイン→バックアップ アーカイブ', padding=(5, 2))
-        label2_1.grid(row=0, column=0, sticky=tk.E)
+        # 期間指定
+        frame2_1 = ttk.Frame(frame2)
+        frame2_1.grid(row=0, column=0, sticky=tk.W)
         archive_from = ttk.Entry(
-            frame2,
+            frame2_1,
             textvariable=cls.archive_from,
             width=10)
-        archive_from.grid(row=0, column=1)
-        label2_2 = ttk.Label(frame2, text='から', padding=(5, 2))
-        label2_2.grid(row=0, column=2, sticky=tk.E)
+        archive_from.grid(row=0, column=0)
+        label2_2 = ttk.Label(frame2_1, text='から', padding=(5, 2))
+        label2_2.grid(row=0, column=1, sticky=tk.E)
         archive_to = ttk.Entry(
-            frame2,
+            frame2_1,
             textvariable=cls.archive_to,
             width=10)
-        archive_to.grid(row=0, column=3)
+        archive_to.grid(row=0, column=2)
+        # プルダウン作成
+        cls.arch_combo = ttk.Combobox(frame2_1, state='readonly',width=25)
+        cls.arch_combo['values'] = (MAIN_TO_BK_COPY, MAIN_TO_BK_ARCH, BK_TO_MAIN_BACK)
+        cls.arch_combo.current(1)
+        cls.arch_combo.grid(row=0, column=3, sticky=tk.E)
+        # 実行ボタン
         arch_btn1 = ttk.Button(frame2, text='実行', command=cls.exec_arch)
-        arch_btn1.grid(row=0, column=4)
-
-        # アーカイブ復帰実行
-        label2_3 = ttk.Label(frame2, text='バックアップ→メイン コピー', padding=(5, 2))
-        label2_3.grid(row=1, column=0, sticky=tk.E)
-        arch_back_from = ttk.Entry(
-            frame2,
-            textvariable=cls.archive_back_from,
-            width=10)
-        arch_back_from.grid(row=1, column=1)
-        label2_4 = ttk.Label(frame2, text='から', padding=(5, 2))
-        label2_4.grid(row=1, column=2, sticky=tk.E)
-        arch_back_to = ttk.Entry(
-            frame2,
-            textvariable=cls.archive_back_to,
-            width=10)
-        arch_back_to.grid(row=1, column=3)
-        arch_btn2 = ttk.Button(frame2, text='実行', command=cls.exec_back_arch)
-        arch_btn2.grid(row=1, column=4)
+        arch_btn1.grid(row=0, column=1)
 
         # バックアップ→外部ディスクコピー
-        label2_4 = ttk.Label(frame2, text='バックアップ→外部ディスク', padding=(5, 2))
-        label2_4.grid(row=2, column=0, sticky=tk.E)
-        frame2_1 = ttk.Frame(frame2)
-        frame2_1.grid(row=2, column=1, sticky=tk.W)
+        frame2_2 = ttk.Frame(frame2)
+        frame2_2.grid(row=1, column=0, sticky=tk.W)
+
+        label2_4 = ttk.Label(frame2_2, text='バックアップ→外部ディスク', padding=(5, 2))
+        label2_4.grid(row=0, column=0, sticky=tk.E)
+
         ext_copy_year = ttk.Entry(
-            frame2_1,
+            frame2_2,
             textvariable=cls.ext_year,
             width=6)
         ext_copy_year.grid(row=0, column=1)
-        label2_4 = ttk.Label(frame2_1, text='年', padding=(5, 2))
+        label2_4 = ttk.Label(frame2_2, text='年', padding=(5, 2))
         label2_4.grid(row=0, column=2, sticky=tk.E)
-        frame2_2 = ttk.Frame(frame2)
-        frame2_2.grid(row=2, column=2, columnspan=2, sticky=tk.E)
         ext_radio1 = tk.Radiobutton(frame2_2, value=archive.TYPE_COPY, variable=cls.ext_type, text='コピー')
-        ext_radio1.grid(row=0, column=0, sticky=tk.E)
+        ext_radio1.grid(row=0, column=3, sticky=tk.E)
         ext_radio2 = tk.Radiobutton(frame2_2, value=archive.TYPE_MOVE, variable=cls.ext_type, text='移動')
-        ext_radio2.grid(row=0, column=1, sticky=tk.E)
+        ext_radio2.grid(row=0, column=4, sticky=tk.E)
         arch_btn3 = ttk.Button(frame2, text='実行', command=cls.exec_ext_move)
-        arch_btn3.grid(row=2, column=4)
+        arch_btn3.grid(row=1, column=1)
 
         # ログエリア
         log_msg = ttk.Label(frame3, text='ログ', padding=(5, 2))
