@@ -118,9 +118,9 @@ class Top:
         frame1 = ttk.Frame(out_frame, padding=(0, 5))
         frame1.grid(row=1, column=0)
         frame2 = ttk.Frame(out_frame, padding=(0, 10))
-        frame2.grid(row=2, column=0, sticky=tk.W)
+        frame2.grid(row=2, column=0)
         frame3 = ttk.Frame(out_frame, padding=(0, 5))
-        frame3.grid(row=3, column=0, sticky=tk.W)
+        frame3.grid(row=3, column=0)
 
         # ディレクトリ設定
         label1_1 = ttk.Label(frame1, text='メインディレクトリ', padding=(5, 2))
@@ -173,10 +173,10 @@ class Top:
             width=10)
         archive_to.grid(row=0, column=2)
         # プルダウン作成
-        cls.arch_combo = ttk.Combobox(frame2_1, state='readonly',width=25)
+        cls.arch_combo = ttk.Combobox(frame2_1, state='readonly', width=25)
         cls.arch_combo['values'] = (MAIN_TO_BK_COPY, MAIN_TO_BK_ARCH, BK_TO_MAIN_BACK)
         cls.arch_combo.current(1)
-        cls.arch_combo.grid(row=0, column=3, sticky=tk.E)
+        cls.arch_combo.grid(row=0, column=3, padx=5, sticky=tk.E)
         # 実行ボタン
         arch_btn1 = ttk.Button(frame2, text='実行', command=cls.exec_arch)
         arch_btn1.grid(row=0, column=1)
