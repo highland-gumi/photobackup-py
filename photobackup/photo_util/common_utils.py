@@ -28,6 +28,13 @@ class FileUtil:
         _, mismatch, error = filecmp.cmpfiles(target_dir, bk_dir, file_list)
         return mismatch + error
 
+    @staticmethod
+    def get_year_list(target_dir):
+        for dir_name in os.listdir(target_dir):
+            if dir_name.isdigit() and os.path.isdir(os.path.join(target_dir, dir_name)):
+                yield dir_name
+
+
 
 
 

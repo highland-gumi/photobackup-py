@@ -7,6 +7,7 @@ class Config:
     SEC_SET = 'SETTING'
     MAIN_DIR = 'MainDirectory'
     BK_DIR = 'BackupDirectory'
+    EXT_DIR = 'ExternalDirectory'
     ARCH_MONTH = 'ArchiveMonth'
     FILE_PATH = 'setting.ini'
 
@@ -20,6 +21,7 @@ class Config:
             self.__config.add_section(self.SEC_DIR)
             self.__config.set(self.SEC_DIR, self.MAIN_DIR, '')
             self.__config.set(self.SEC_DIR, self.BK_DIR, '')
+            self.__config.set(self.SEC_DIR, self.EXT_DIR, '')
             self.__config.add_section(self.SEC_SET)
             self.__config.set(self.SEC_SET, self.ARCH_MONTH, '3')
             with open(self.FILE_PATH, 'w') as file:

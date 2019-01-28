@@ -5,6 +5,8 @@ from photo_util.config import Config as Conf
 
 # 定数
 DATE_FORMAT = '%Y/%m/%d'
+TYPE_COPY = 0
+TYPE_MOVE = 1
 
 
 class Archive:
@@ -21,7 +23,7 @@ class Archive:
         self.main_dir = conf.load(conf.SEC_DIR, conf.MAIN_DIR)
         self.bk_dir = conf.load(conf.SEC_DIR, conf.BK_DIR)
 
-    def archive_previous_date(self):
+    def func_exec_by_date(self):
         try:
             if not os.path.exists(self.main_dir):
                 raise ValueError('メインディレクトリの設定が正しくありません：' + self.main_dir)
@@ -100,7 +102,7 @@ class BackArchive:
         self.main_dir = conf.load(conf.SEC_DIR, conf.MAIN_DIR)
         self.bk_dir = conf.load(conf.SEC_DIR, conf.BK_DIR)
 
-    def back_archive_by_date(self):
+    def func_exec_by_date(self):
         try:
             if not os.path.exists(self.main_dir):
                 raise ValueError('メインディレクトリの設定が正しくありません：' + self.main_dir)
@@ -161,3 +163,62 @@ class BackArchive:
         os.remove(tmp_dir)
         win.Top.log_info('シンボリックリンク削除：' + target_dir)
 
+
+class ExtDisk:
+    def __init__(self, year, exec_type):
+        self.year = year
+        conf = Conf()
+        self.main_dir = conf.load(conf.SEC_DIR, conf.MAIN_DIR)
+        self.bk_dir = conf.load(conf.SEC_DIR, conf.BK_DIR)
+        self.ext_dir = conf.load(conf.SEC_DIR, conf.EXT_DIR)
+        self.type = exec_type
+
+    def func_exec(self):
+        try:
+            if not os.path.exists(self.main_dir):
+                raise ValueError('メインディレクトリの設定が正しくありません：' + self.main_dir)
+            if not os.path.exists(self.bk_dir):
+                raise ValueError('バックアップディレクトリの設定が正しくありません：' + self.bk_dir)
+            if not os.path.exists(self.ext_dir):
+                raise ValueError('外部ディスクの設定が正しくありません：' + self.ext_dir)
+            main_year_dir = os.path.join(self.main_dir, self.year)
+            tmp_main_dir = main_year_dir + '_tmp'
+            bk_year_dir = os.path.join(self.bk_dir, self.year)
+            ext_year_dir = os.path.join(self.ext_dir, self.year)
+            if os.path.exists(ext_year_dir) or os.path.islink(main_year_dir):
+                raise ValueError('指定した年は既に外部ディスクにコピーされています')
+            if not os.path.exists(bk_year_dir):
+                raise ValueError('指定した年のバックアップは存在しません')
+
+            # 処理開始
+            win.Top.log_info('【バックアップ→外部ディスクコピー開始】')
+
+            # コピー実行
+            shutil.copytree(bk_year_dir, ext_year_dir)
+            if not utils.FileUtil.contains_dir(ext_year_dir, bk_year_dir):
+                # コピー失敗時は元の状態に戻す
+                shutil.rmtree(ext_year_dir)
+                raise ValueError('外部ディスクへのコピーに失敗しました')
+            try:
+                # シンボリックリンク作成
+                shutil.move(main_year_dir, tmp_main_dir)
+                os.symlink(ext_year_dir, main_year_dir)
+                win.Top.log_info('シンボリックリンク作成：' + main_year_dir + '->' + ext_year_dir)
+                shutil.rmtree(tmp_main_dir)
+            except Exception as e:
+                # シンボリックリンク作成失敗
+                shutil.rmtree(ext_year_dir)
+                shutil.move(tmp_main_dir, main_year_dir)
+                raise e
+
+            if self.type == TYPE_MOVE:
+                # 動作モードが移動の場合はバックアップディレクトリ削除
+                shutil.rmtree(bk_year_dir)
+                win.Top.log_info('外部ディスクに移動しました：' + bk_year_dir + ' -> ' + ext_year_dir)
+            else:
+                win.Top.log_info('外部ディスクにコピーしました：' + bk_year_dir + ' -> ' + ext_year_dir)
+
+            win.Top.log_info('【バックアップ→外部ディスクコピー終了】')
+        except Exception as e:
+            win.Top.log_warn(e)
+            raise e
