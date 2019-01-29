@@ -33,6 +33,8 @@ Lightroomから見ると、すべて本体側にあるように扱うことが�
 -------------
 実行イメージ
 
-.. image::docs/exec_image.png
+.. image:: docs/exec_image.png
+   :align: left
 
-.. image::docs/gui_image.png
+.. image:: docs/gui_image.png
+    :align: left
