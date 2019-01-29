@@ -135,7 +135,6 @@ class Archive:
             win.Top.log_info('ファイルコピー：' + src_dir + ' -> ' + bk_dir)
 
 
-
 class BackArchive:
     def __init__(self, *,from_date=None, to_date=None):
         if from_date and isinstance(from_date, str):
@@ -145,7 +144,7 @@ class BackArchive:
         if to_date and isinstance(to_date, str):
             self.to_date = datetime.datetime.strptime(to_date, DATE_FORMAT)
         else:
-            self.to_date = from_date
+            self.to_date = to_date
         conf = Conf()
         self.main_dir = conf.load(conf.SEC_DIR, conf.MAIN_DIR)
         self.bk_dir = conf.load(conf.SEC_DIR, conf.BK_DIR)
