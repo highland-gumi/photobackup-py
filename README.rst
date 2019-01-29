@@ -29,12 +29,3 @@ Lightroomから見ると、すべて本体側にあるように扱うことが�
 
 - Windows 10
 - macOS Mojave
-
--------------
-実行イメージ
-
-.. image:: docs/exec_image.png
-   :align: left
-
-.. image:: docs/gui_image.png
-    :align: left
