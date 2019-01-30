@@ -214,11 +214,11 @@ class BackArchive:
 class ExtDisk:
     def __init__(self, year, exec_type):
         self.year = year
+        self.type = exec_type
         conf = Conf()
         self.main_dir = conf.load(conf.SEC_DIR, conf.MAIN_DIR)
         self.bk_dir = conf.load(conf.SEC_DIR, conf.BK_DIR)
         self.ext_dir = conf.load(conf.SEC_DIR, conf.EXT_DIR)
-        self.type = exec_type
 
     def func_exec(self):
         try:
