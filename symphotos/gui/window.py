@@ -2,11 +2,11 @@ import tkinter as tk
 from tkinter import ttk as ttk
 from datetime import datetime
 import threading, os
-from dateutil.relativedelta import relativedelta
 import tkinter.filedialog as filedialog
 from photo_util.config import Config as Conf
-from photo_util.common_utils import FileUtil as FUtil
+from photo_util.common_utils import DateUtil as DateUtil
 from action import archive
+import time
 
 # 定数
 MAIN_TO_BK_COPY = 'メイン→バックアップ コピー'
@@ -17,17 +17,16 @@ BK_TO_MAIN_BACK = 'バックアップ→メイン 復元コピー'
 class Top:
     def __init__(self):
         conf = Conf()
-        self.main_dir.set(conf.load(conf.SEC_DIR, conf.MAIN_DIR))
-        self.bk_dir.set(conf.load(conf.SEC_DIR, conf.BK_DIR))
-        self.ext_dir.set(conf.load(conf.SEC_DIR, conf.EXT_DIR))
-        arch_month = int(conf.load(conf.SEC_SET, conf.ARCH_MONTH))
+        self.main_dir.set(conf.load(Conf.SEC_DIR, Conf.MAIN_DIR))
+        self.bk_dir.set(conf.load(Conf.SEC_DIR, Conf.BK_DIR))
+        self.ext_dir.set(conf.load(Conf.SEC_DIR, Conf.EXT_DIR))
+        arch_month = int(conf.load(Conf.SEC_SET, Conf.ARCH_MONTH))
         if arch_month:
-            default_day = datetime.today() - relativedelta(months=arch_month)
+            default_day = DateUtil.default_from_day()
             self.archive_to.set(default_day.strftime(archive.DATE_FORMAT))
         self.ext_type = archive.TYPE_COPY
 
-    _instance = None
-    _lock = threading.Lock()
+    # 画面用変数
     root = tk.Tk()
     main_dir = tk.StringVar()
     bk_dir = tk.StringVar()
@@ -38,6 +37,9 @@ class Top:
     ext_type = tk.IntVar()
     logs = tk.Text()
     arch_combo = ttk.Combobox()
+
+    # ロック制御
+    exec_lock = threading.Lock()
 
     @classmethod
     def main_dir_ref(cls):
@@ -60,9 +62,9 @@ class Top:
     @classmethod
     def exec_save(cls):
         conf = Conf()
-        dic = {conf.MAIN_DIR: cls.main_dir.get(),
-               conf.BK_DIR: cls.bk_dir.get(),
-               conf.EXT_DIR: cls.ext_dir.get()}
+        dic = {Conf.MAIN_DIR: cls.main_dir.get(),
+               Conf.BK_DIR: cls.bk_dir.get(),
+               Conf.EXT_DIR: cls.ext_dir.get()}
         conf.save(conf.SEC_DIR, dic)
         cls.log_info('設定値を保存しました')
 
@@ -75,13 +77,18 @@ class Top:
         if not from_date and not to_date:
             cls.log_info('対象日が指定されていません')
             return
-        cls.exec_save()
-        if cmd == MAIN_TO_BK_ARCH:
-            archive.Archive(from_date=from_date, to_date=to_date).func_exec_by_date()
-        elif cmd == MAIN_TO_BK_COPY:
-            archive.Archive(from_date=from_date, to_date=to_date).func_copy_to_backup()
-        elif cmd == BK_TO_MAIN_BACK:
-            archive.BackArchive(from_date=from_date, to_date=to_date).func_exec_by_date()
+
+        with cls.exec_lock:
+            cls.exec_save()
+            if cmd == MAIN_TO_BK_ARCH:
+                action = archive.Archive(from_date=from_date, to_date=to_date)
+                threading.Thread(target=action.func_exec_by_date).start()
+            elif cmd == MAIN_TO_BK_COPY:
+                action = archive.Archive(from_date=from_date, to_date=to_date)
+                threading.Thread(target=action.func_copy_to_backup).start()
+            elif cmd == BK_TO_MAIN_BACK:
+                action = archive.BackArchive(from_date=from_date, to_date=to_date)
+                threading.Thread(target=action.func_exec_by_date).start()
 
     @classmethod
     def exec_ext_move(cls):
@@ -95,18 +102,18 @@ class Top:
             archive.ExtDisk(year, exec_type).func_exec()
 
     @classmethod
-    def add_log(cls, level, msg):
-        now = datetime.now().strftime('%Y/%m/%d %H:%M:%S')
-        cls.logs.insert(tk.END, '[%s][%s] %s\n' % (now, level, msg))
-        cls.logs.see(tk.END)
-
-    @classmethod
     def log_warn(cls, msg):
         cls.add_log('WARN', msg)
 
     @classmethod
     def log_info(cls, msg):
         cls.add_log('INFO', msg)
+
+    @classmethod
+    def add_log(cls, level, msg):
+        now = datetime.now().strftime('%Y/%m/%d %H:%M:%S')
+        cls.logs.insert(tk.END, '[%s][%s] %s\n' % (now, level, msg))
+        cls.logs.see(tk.END)
 
     @classmethod
     def create_window(cls):

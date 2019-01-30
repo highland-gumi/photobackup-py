@@ -1,4 +1,5 @@
 import configparser, os
+from threading import Lock
 
 
 class Config:
@@ -11,26 +12,26 @@ class Config:
     ARCH_MONTH = 'ArchiveMonth'
     FILE_PATH = 'setting.ini'
 
-    _instance = None
+    __instance = None
+    __lock = Lock()
     __config = configparser.ConfigParser()
 
-    def __init__(self):
-        if os.path.exists(self.FILE_PATH):
-            self.__config.read(self.FILE_PATH)
-        else:
-            self.__config.add_section(self.SEC_DIR)
-            self.__config.set(self.SEC_DIR, self.MAIN_DIR, '')
-            self.__config.set(self.SEC_DIR, self.BK_DIR, '')
-            self.__config.set(self.SEC_DIR, self.EXT_DIR, '')
-            self.__config.add_section(self.SEC_SET)
-            self.__config.set(self.SEC_SET, self.ARCH_MONTH, '3')
-            with open(self.FILE_PATH, 'w') as file:
-                self.__config.write(file)
-
     def __new__(cls):
-        if cls._instance is None:
-            cls._instance = super().__new__(cls)
-        return cls._instance
+        with cls.__lock:
+            if cls.__instance is None:
+                cls.__instance = super().__new__(cls)
+                if os.path.exists(cls.FILE_PATH):
+                    cls.__config.read(cls.FILE_PATH)
+                else:
+                    cls.__config.add_section(cls.SEC_DIR)
+                    cls.__config.set(cls.SEC_DIR, cls.MAIN_DIR, '')
+                    cls.__config.set(cls.SEC_DIR, cls.BK_DIR, '')
+                    cls.__config.set(cls.SEC_DIR, cls.EXT_DIR, '')
+                    cls.__config.add_section(cls.SEC_SET)
+                    cls.__config.set(cls.SEC_SET, cls.ARCH_MONTH, '3')
+                    with open(cls.FILE_PATH, 'w') as file:
+                        cls.__config.write(file)
+        return cls.__instance
 
     def load(self, section, key):
         return self.__config.get(section, key)

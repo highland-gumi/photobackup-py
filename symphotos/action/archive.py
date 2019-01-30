@@ -1,5 +1,4 @@
 import os, datetime, re, shutil
-from distutils import dir_util
 from gui import window as win
 from photo_util import common_utils as utils
 from photo_util.config import Config as Conf
@@ -11,7 +10,7 @@ TYPE_MOVE = 1
 
 
 class Archive:
-    def __init__(self, *,from_date=None, to_date=None):
+    def __init__(self, *, from_date=None, to_date=None):
         if from_date and isinstance(from_date, str):
             self.from_date = datetime.datetime.strptime(from_date, DATE_FORMAT)
         else:
@@ -31,7 +30,6 @@ class Archive:
             if not os.path.exists(self.bk_dir):
                 raise ValueError('バックアップディレクトリの設定が正しくありません：' + self.bk_dir)
             win.Top.log_info('【メイン→バックアップ アーカイブ処理開始】')
-
             # 主処理
             for year in os.listdir(self.main_dir):
                 year_dir = os.path.join(self.main_dir, year)
@@ -44,7 +42,7 @@ class Archive:
                     if 2 < len(month) and re.search(r'^[0-9]{1,2}[^0-9]*[0-9]{1,2}.*$', month):
                         # 月と日が同一ディレクトリの処理
                         target_date = utils.DateUtil.parse(year=year, date=month)
-                        self.exec_archive_dir(target_date, month_dir)
+                        self.__exec_archive_dir(target_date, month_dir)
                     elif month.isdigit():
                         # 月の中に日のサブディレクトリの処理
                         for day in os.listdir(month_dir):
@@ -52,13 +50,13 @@ class Archive:
                             if not os.path.exists(day_dir) or not day.isdigit() or os.path.islink(day_dir):
                                 continue
                             target_date = utils.DateUtil.parse(year=year, month=month, day=day)
-                            self.exec_archive_dir(target_date, day_dir)
+                            self.__exec_archive_dir(target_date, day_dir)
             win.Top.log_info('【メイン→バックアップ アーカイブ処理終了】')
         except Exception as e:
             win.Top.log_warn(e)
             raise e
 
-    def exec_archive_dir(self, target_date, target_dir):
+    def __exec_archive_dir(self, target_date, target_dir):
         # 処理日付チェック
         if (self.from_date and target_date < self.from_date) \
                 or (self.to_date and self.to_date < target_date):
@@ -108,7 +106,7 @@ class Archive:
                         if os.path.islink(month_dir):
                             continue
                         target_date = utils.DateUtil.parse(year=year, date=month)
-                        self.exec_copy(target_date, month_dir)
+                        self.__copy_main_to_backup(target_date, month_dir)
                     elif month.isdigit():
                         # 月の中に日のサブディレクトリの処理
                         for day in os.listdir(month_dir):
@@ -116,14 +114,14 @@ class Archive:
                             if not day.isdigit() or os.path.islink(day_dir):
                                 continue
                             target_date = utils.DateUtil.parse(year=year, month=month, day=day)
-                            self.exec_copy(target_date, day_dir)
+                            self.__copy_main_to_backup(target_date, day_dir)
 
             win.Top.log_info('【メイン→バックアップ コピー処理終了】')
         except Exception as e:
             win.Top.log_warn(e)
             raise e
 
-    def exec_copy(self, target_date, src_dir):
+    def __copy_main_to_backup(self, target_date, src_dir):
         # 処理日付チェック
         if (self.from_date and target_date < self.from_date) \
                 or (self.to_date and self.to_date < target_date):
@@ -136,7 +134,7 @@ class Archive:
 
 
 class BackArchive:
-    def __init__(self, *,from_date=None, to_date=None):
+    def __init__(self, *, from_date=None, to_date=None):
         if from_date and isinstance(from_date, str):
             self.from_date = datetime.datetime.strptime(from_date, DATE_FORMAT)
         else:

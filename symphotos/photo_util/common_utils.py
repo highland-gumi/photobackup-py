@@ -1,5 +1,7 @@
 import re, datetime, os, filecmp, shutil
 from typing import List
+from dateutil.relativedelta import relativedelta
+from photo_util.config import Config as Conf
 
 
 class DateUtil:
@@ -14,6 +16,14 @@ class DateUtil:
                 month = split[0]
                 day = split[1]
         return datetime.datetime.strptime('%04s%02s%02s' % (year, month, day), '%Y%m%d')
+
+    @staticmethod
+    def default_from_day(arch_month=None):
+        if not arch_month:
+            conf = Conf()
+            arch_month = conf.load(conf.SEC_SET, conf.ARCH_MONTH)
+        if arch_month:
+            return datetime.datetime.today() - relativedelta(months=int(arch_month))
 
 
 class FileUtil:
@@ -51,4 +61,3 @@ class FileUtil:
     @staticmethod
     def is_hidden(filename):
         return filename.startswith('.')
-
