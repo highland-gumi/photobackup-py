@@ -1,12 +1,12 @@
 import tkinter as tk
-from tkinter import ttk as ttk
+import tkinter.filedialog
+import tkinter.ttk as ttk
+import os, threading
 from datetime import datetime
-import threading, os
-import tkinter.filedialog as filedialog
+from action import archive
 from photo_util.config import Config as Conf
 from photo_util.common_utils import DateUtil as DateUtil
-from action import archive
-import time
+from photo_util.thread_lock import Lock as Lock
 
 # 定数
 MAIN_TO_BK_COPY = 'メイン→バックアップ コピー'
@@ -38,24 +38,21 @@ class Top:
     logs = tk.Text()
     arch_combo = ttk.Combobox()
 
-    # ロック制御
-    exec_lock = threading.Lock()
-
     @classmethod
     def main_dir_ref(cls):
-        refs = filedialog.askdirectory(initialdir=cls.main_dir.get())
+        refs = tk.filedialog.askdirectory(initialdir=cls.main_dir.get())
         if refs:
             cls.main_dir.set(refs.replace('/', os.sep))
 
     @classmethod
     def bk_dir_ref(cls):
-        refs = filedialog.askdirectory(initialdir=cls.bk_dir.get())
+        refs = tk.filedialog.askdirectory(initialdir=cls.bk_dir.get())
         if refs:
             cls.bk_dir.set(refs.replace('/', os.sep))
 
     @classmethod
     def ext_dir_ref(cls):
-        refs = filedialog.askdirectory(initialdir=cls.ext_dir.get())
+        refs = tk.filedialog.askdirectory(initialdir=cls.ext_dir.get())
         if refs:
             cls.ext_dir.set(refs.replace('/', os.sep))
 
@@ -70,6 +67,10 @@ class Top:
 
     @classmethod
     def exec_arch(cls):
+        if not Lock().is_locked():
+            cls.log_warn('別の処理を実行中です')
+            return
+
         # 実行
         from_date = cls.archive_from.get()
         to_date = cls.archive_to.get()
@@ -77,18 +78,17 @@ class Top:
         if not from_date and not to_date:
             cls.log_info('対象日が指定されていません')
             return
+        cls.exec_save()
 
-        with cls.exec_lock:
-            cls.exec_save()
-            if cmd == MAIN_TO_BK_ARCH:
-                action = archive.Archive(from_date=from_date, to_date=to_date)
-                threading.Thread(target=action.func_exec_by_date).start()
-            elif cmd == MAIN_TO_BK_COPY:
-                action = archive.Archive(from_date=from_date, to_date=to_date)
-                threading.Thread(target=action.func_copy_to_backup).start()
-            elif cmd == BK_TO_MAIN_BACK:
-                action = archive.BackArchive(from_date=from_date, to_date=to_date)
-                threading.Thread(target=action.func_exec_by_date).start()
+        if cmd == MAIN_TO_BK_ARCH:
+            action = archive.Archive(from_date=from_date, to_date=to_date)
+            threading.Thread(target=action.func_exec_by_date).start()
+        elif cmd == MAIN_TO_BK_COPY:
+            action = archive.Archive(from_date=from_date, to_date=to_date)
+            threading.Thread(target=action.func_copy_to_backup).start()
+        elif cmd == BK_TO_MAIN_BACK:
+            action = archive.BackArchive(from_date=from_date, to_date=to_date)
+            threading.Thread(target=action.func_exec_by_date).start()
 
     @classmethod
     def exec_ext_move(cls):

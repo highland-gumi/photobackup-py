@@ -1,7 +1,8 @@
 import os, datetime, re, shutil
-from gui import window as win
+import photo_util.thread_lock
 from photo_util import common_utils as utils
 from photo_util.config import Config as Conf
+from gui import window as win
 
 # 定数
 DATE_FORMAT = '%Y/%m/%d'
@@ -23,6 +24,7 @@ class Archive:
         self.main_dir = conf.load(conf.SEC_DIR, conf.MAIN_DIR)
         self.bk_dir = conf.load(conf.SEC_DIR, conf.BK_DIR)
 
+    @photo_util.thread_lock.locking
     def func_exec_by_date(self):
         try:
             if not os.path.exists(self.main_dir):
@@ -86,6 +88,7 @@ class Archive:
         shutil.rmtree(tmp_dir)
         win.Top.log_info(target_dir + 'を削除しました')
 
+    @photo_util.thread_lock.locking
     def func_copy_to_backup(self):
         try:
             if not os.path.exists(self.main_dir):
@@ -147,6 +150,7 @@ class BackArchive:
         self.main_dir = conf.load(conf.SEC_DIR, conf.MAIN_DIR)
         self.bk_dir = conf.load(conf.SEC_DIR, conf.BK_DIR)
 
+    @photo_util.thread_lock.locking
     def func_exec_by_date(self):
         try:
             if not os.path.exists(self.main_dir):
@@ -218,6 +222,7 @@ class ExtDisk:
         self.bk_dir = conf.load(conf.SEC_DIR, conf.BK_DIR)
         self.ext_dir = conf.load(conf.SEC_DIR, conf.EXT_DIR)
 
+    @photo_util.thread_lock.locking
     def func_exec(self):
         try:
             if not os.path.exists(self.main_dir):
