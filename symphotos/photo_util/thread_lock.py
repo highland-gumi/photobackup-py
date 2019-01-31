@@ -26,8 +26,10 @@ class Lock():
 
 def locking(func):
     def wrapper(*args, **kwargs):
-        lock.acquire()
-        func(*args, **kwargs)
-        lock.release()
+        try:
+            lock.acquire()
+            func(*args, **kwargs)
+        finally:
+            lock.release()
 
     return wrapper
